@@ -1,6 +1,6 @@
 #!/bin/bash
 
-tests=2
+tests=15
 
 test_md5_01()
 {
@@ -99,6 +99,31 @@ test_md5_12()
     result="$(echo "just to be extra clear" | $EXECUTABLE md5 -r -q -p -s "foo" file 2>&1)"
     reference=$'just to be extra clear\n3ba35f1ea0d170cb3b9a752e3360286c\nacbd18db4cc2f85cedef654fccc4a4d8\n53d53ea94217b259c11a5a2d104ec58a'
     rm -f file
+    result_compare "$result" "$reference"
+}
+
+test_md5_13()
+{
+    echo "https://www.youtube.com/watch?v=w-5yAtMtrSM" > file
+    result="$($EXECUTABLE md5 -q file 2>&1)"
+    reference=$'b1cfd03666d9473ce32e0d7c31d00203'
+    rm -f file
+    result_compare "$result" "$reference"
+}
+
+test_md5_14()
+{
+    echo "https://www.youtube.com/watch?v=w-5yAtMtrSM" > file
+    result="$($EXECUTABLE md5 file 2>&1)"
+    reference=$'MD5(file) = b1cfd03666d9473ce32e0d7c31d00203'
+    rm -f file
+    result_compare "$result" "$reference"
+}
+
+test_md5_15()
+{
+    result="$($EXECUTABLE md5 -s "wubba lubba dub dub" 2>&1)"
+    reference=$'MD5("wubba lubba dub dub") = 914ebdda4b3f36685a4dd8b3421197a3'
     result_compare "$result" "$reference"
 }
 
