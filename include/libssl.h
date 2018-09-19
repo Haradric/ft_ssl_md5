@@ -15,6 +15,11 @@ fflush(stdout); \
 #  define debug(...)
 # endif
 
+/*
+** Left rotate
+*/
+#define ROTATE(x,n) (((x) << (n)) | ((x) >> (32 - (n))))
+
 void	*md5(const void *msg, size_t len);
 void	*sha256(const void *msg, size_t len);
 

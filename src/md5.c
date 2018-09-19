@@ -101,13 +101,13 @@ int			ssl_md5(int argc, char **argv)
 		ret += hash_string(last->content, &params);
 		last = last->next;
 	}
+	ft_lstfreelist(&params.strings, free);
 	last = params.files;
 	while (last)
 	{
 		ret += hash_file(last->content, &params);
 		last = last->next;
 	}
-	ft_lstfreelist(&params.strings, free);
 	ft_lstfreelist(&params.files, free);
 	return ((ret) ? 1 : 0);
 }

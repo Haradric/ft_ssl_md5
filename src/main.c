@@ -25,14 +25,15 @@ static int	from_argv(const t_sslfunc *func_arr, int argc, char **argv)
 			return (func_arr[i].func(argc - 1, &argv[1]));
 		++i;
 	}
-	terminate_custom(argv[1], "is an invalid command");
+	terminate_custom(argv[1], "invalid command");
 	return (1);
 }
 
 int			main(int argc, char **argv)
 {
 	const t_sslfunc arr[SSLFUNCNUM] = {
-		{"md5", ssl_md5}
+		{"md5", ssl_md5},
+		{"sha256", ssl_sha256}
 	};
 
 #ifdef DEBUG

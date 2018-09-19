@@ -2,7 +2,7 @@
 #ifndef FT_SSL_H
 # define FT_SSL_H
 
-# define SSLFUNCNUM     1
+# define SSLFUNCNUM     2
 # define SSLFUNCNAMELEN 16
 
 typedef struct	s_sslfunc {
@@ -20,6 +20,7 @@ typedef struct	s_sslparam {
 }				t_sslparam;
 
 int				ssl_md5(int argc, char **argv);
+int				ssl_sha256(int argc, char **argv);
 
 int				read_params(t_sslparam *opt, int argc, char **argv);
 char			*read_stdin(void);
@@ -31,6 +32,5 @@ void			error_custom(const char *str, const char *err_str);
 void			terminate_custom(const char *str, const char *err_str);
 
 void			hash_to_str(char *buff, uint8_t *hash, size_t len);
-
 
 #endif

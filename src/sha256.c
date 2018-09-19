@@ -1,101 +1,113 @@
-//
-//#include <stdlib.h>
-//#include <unistd.h>
-//#include <fcntl.h>
-//#include <sys/stat.h>
-//#include "libft.h"
-//#include "libssl.h"
-//#include "ft_ssl.h"
-//#include <stdio.h>
-//
-//#define SHA256HASHSIZE 16
-//
-//#define a(x) (((x) > 9) ? ((x) + 'a' - 10) : ((x) + '0'))
-//#define hash_string(str, opt) hash_msg(str, str, opt, 1)
-//
-//static void hash_print(uint8_t *hash, size_t len)
-//{
-//	size_t i;
-//	char c;
-//	i = 0;
-//	while (i < len)
-//	{
-//		c = a(hash[i] / 16);
-//		write(STDOUT_FILENO, &c, 1);
-//		c = a(hash[i] % 16);
-//		write(STDOUT_FILENO, &c, 1);
-//		++i;
-//	}
-//}
-//
-//static int hash_msg(char *str, char *msg, t_sslopt *opt, int mode)
-//{
-//	uint8_t *buff;
-//
-//	buff = sha256(msg, ft_strlen(msg));
-//	if (opt->q == 0 && opt->r == 0)
-//		ft_printf((mode) ? "SHA256(\"%s\") = " : "MD%(%s)", str);
-//	hash_print(buff, SHA256HASHSIZE);
-//	if (opt->q == 0 && opt->r == 1)
-//		ft_printf((mode) ? " \"%s\"" : " %s", str);
-//	write(STDOUT_FILENO, "\n", 1);
-//	return (0);
-//}
-//
-////static int hash_file(char *file, t_sslopt *opt)
-////{
-////	struct stat filestat;
-////	char *str;
-////	int fd;
-////
-////	if (stat(file, &filestat) == -1 || (fd = open(file, O_RDONLY)) == -1)
-////	{
-////		error(file);
-////		return (1);
-////	}
-////	if (!S_ISDIR(filestat.st_mode))
-////	{
-////		str = read_file(fd);
-////		hash_msg(file, str, opt, 0);
-////	}
-////	else
-////	{
-////		error_custom(file, "not a directory");
-////		return (1);
-////	}
-////	if (close(fd))
-////	{
-////		error(file);
-////		return (1);
-////	}
-////	return (0);
-////}
-//
-//int ssl_sha256(int argc, char **argv)
-//{
-//	t_sslopt opt;
-//	size_t	 i;
-//	size_t   j;
-//	int		 ret;
-//
-//	ret = 0;
-//	ft_memset(&opt, 0, sizeof(t_sslopt));
-//	if ((j = read_params(&opt, argc, argv)) == (size_t)-1)
-//		return (1);
-//	i = 1;
-//	while (i < (size_t)argc)
-//	{
-//		if (!ft_strcmp(argv[i], "-p") || !ft_strcmp(argv[i], "-q") || \
-//			!ft_strcmp(argv[i], "-r"))
-//			;
-//		else if (!ft_strcmp(argv[i], "-s"))
-//		{
-//			ret += hash_string(argv[i], &opt);
-//			++i;
-//		}
-//		else
-//			; //ret += hash_file(argv[i], &opt);
-//		++i;
-//	}
-//	return ((ret) ? 1 : 0);
-//}
+
+#include <stdlib.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <sys/stat.h>
+#include <sys/mman.h>
+#include "libft.h"
+#include "libssl.h"
+#include "ft_ssl.h"
+#include <stdio.h>
+
+#define SHA256HASHSIZE 32
+
+static void	hash_stdin(t_sslparam *params)
+{
+	char	hash_str[SHA256HASHSIZE * 2 + 1];
+	char	*str;
+
+	str = read_stdin();
+	ft_memset(hash_str, 0, SHA256HASHSIZE * 2 + 1);
+	hash_to_str(hash_str, sha256(str, ft_strlen(str)), SHA256HASHSIZE);
+	if (params->p)
+		ft_printf("%s%s\n", str, hash_str);
+	else
+		ft_printf("%s\n", hash_str);
+	free(str);
+}
+
+static int	hash_string(char *str, t_sslparam *opt)
+{
+	char	hash_str[SHA256HASHSIZE * 2 + 1];
+
+	ft_memset(hash_str, 0, SHA256HASHSIZE * 2 + 1);
+	hash_to_str(hash_str, sha256(str, ft_strlen(str)), SHA256HASHSIZE);
+	if (opt->q)
+		ft_printf("%s\n", hash_str);
+	else if (opt->r)
+		ft_printf("%s \"%s\"\n", hash_str, str);
+	else
+		ft_printf("SHA256(\"%s\") = %s\n", str, hash_str);
+	return (0);
+}
+
+static void	hash_file_print(uint8_t *hash_buff, char *file, t_sslparam *opt)
+{
+	char	hash_str[SHA256HASHSIZE * 2 + 1];
+
+	ft_memset(hash_str, 0, SHA256HASHSIZE * 2 + 1);
+	hash_to_str(hash_str, hash_buff, SHA256HASHSIZE);
+	if (opt->q)
+		ft_printf("%s\n", hash_str);
+	else if (opt->r)
+		ft_printf("%s %s\n", hash_str, file);
+	else
+		ft_printf("SHA256(%s) = %s\n", file, hash_str);
+}
+
+static int	hash_file(char *file, t_sslparam *opt)
+{
+	struct stat	st;
+	void		*map;
+	uint8_t		*buff;
+	int			fd;
+
+	if ((fd = open(file, O_RDONLY)) == -1 || fstat(fd, &st) == -1)
+	{
+		error(file);
+		return (1);
+	}
+	if (S_ISDIR(st.st_mode))
+	{
+		error_custom(file, "not a directory");
+		close(fd);
+		return (1);
+	}
+	map = mmap(NULL, st.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
+	buff = sha256(map, st.st_size);
+	hash_file_print(buff, file, opt);
+	if (munmap(map, st.st_size) == -1 || close(fd) == -1)
+	{
+		error(file);
+		return (1);
+	}
+	return (0);
+}
+
+int			ssl_sha256(int argc, char **argv)
+{
+	t_sslparam	params;
+	t_list		*last;
+	int			ret;
+
+	ret = 0;
+	if (read_params(&params, argc, argv) == -1)
+		return (1);
+	if (params.p || (!params.strings && !params.files))
+		hash_stdin(&params);
+	last = params.strings;
+	while (last)
+	{
+		ret += hash_string(last->content, &params);
+		last = last->next;
+	}
+	ft_lstfreelist(&params.strings, free);
+	last = params.files;
+	while (last)
+	{
+		ret += hash_file(last->content, &params);
+		last = last->next;
+	}
+	ft_lstfreelist(&params.files, free);
+	return ((ret) ? 1 : 0);
+}

@@ -56,7 +56,6 @@ static int	read_files(int i, int argc, char **argv, t_sslparam *opt)
 
 int			read_params(t_sslparam *opt, int argc, char **argv)
 {
-//	char	*str;
 	int		i;
 
 	ft_memset(opt, 0, sizeof(*opt));
@@ -65,29 +64,5 @@ int			read_params(t_sslparam *opt, int argc, char **argv)
 		return (-1);
 	i = read_strings(i, argc, argv, opt);
 	i = read_files(i, argc, argv, opt);
-//	if (!(opt->files && !opt->p))
-//	{
-//		str = read_stdin();
-//		ft_lstpushfront(&opt->strings, ft_lstnew(str, ft_strlen(str) + 1));
-//		free(str);
-//	}
-#ifdef DEBUG
-	t_list *last;
-	ft_printf("options:\n    -p - %d\n    -q - %d\n    -r - %d\n", opt->p, opt->q, opt->r);
-	last = opt->strings;
-	ft_printf("    strings:\n");
-	while (last)
-	{
-		ft_printf("        \"%s\"\n", last->content);
-		last = last->next;
-	}
-	last = opt->files;
-	ft_printf("    files  :\n");
-	while (last)
-	{
-		ft_printf("        %s\n", last->content);
-		last = last->next;
-	}
-#endif
 	return (i);
 }

@@ -4,8 +4,6 @@
 #include "libft.h"
 #include "libssl.h"
 
-#define ROTATE_L(x,n) (((x) << (n)) | ((x) >> (32 - (n))))
-
 #define FUNC_F(b,c,d) ((b) & (c)) | ((~(b)) & (d));
 #define FUNC_G(b,c,d) ((d) & (b)) | ((~(d)) & (c));
 #define FUNC_H(b,c,d) (b) ^ (c) ^ (d);
@@ -81,7 +79,7 @@ static uint32_t	transform(uint32_t i, uint32_t *block, uint32_t *m)
 		F = FUNC_I(B, C, D);
 		G = (7 * i) % 16;
 	}
-	return (B + ROTATE_L(F + A + k[i] + m[G], s[i]));
+	return (B + ROTATE(F + A + k[i] + m[G], s[i]));
 }
 
 static void		compress(char *msg, uint32_t *hash)
@@ -107,11 +105,11 @@ static void		compress(char *msg, uint32_t *hash)
 		hash[i] += block[i];
 }
 
-static void		init_msg_buff(const void *msg, size_t len, void **buff, \
-						size_t *bufflen)
+static void		prepare_message_schedule(const void *msg, size_t len, \
+						void **buff, size_t *bufflen)
 {
 #ifdef DEBUG
-	//debug_print_buff((uint8_t *)msg, len);
+	debug_print_buff((uint8_t *)msg, len);
 #endif
 	*bufflen = len + 1;
 	while (*bufflen % 64 != 56)
@@ -124,8 +122,6 @@ static void		init_msg_buff(const void *msg, size_t len, void **buff, \
 	}
 	ft_memset(*buff, 0, *bufflen + sizeof(uint64_t));
 	ft_memcpy(*buff, msg, len);
-//	if (ft_memcmp(msg, *buff, len))
-//		printf("strings are different!\n");
 	*(uint32_t *)(*buff + len) = 0x80;
 	*(uint32_t *)(*buff + *bufflen) = (uint32_t)(len * 8);
 #ifdef DEBUG
@@ -141,7 +137,7 @@ void			*md5(const void *msg, size_t len)
 	size_t			i;
 
 	ft_memcpy(hash, h, sizeof(uint32_t) * 4);
-	init_msg_buff(msg, len, &buff, &bufflen);
+	prepare_message_schedule(msg, len, &buff, &bufflen);
 	debug("    A          B          C          D          F\n");
 	i = 0;
 	while (i < bufflen)

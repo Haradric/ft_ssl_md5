@@ -1,8 +1,15 @@
 
+#include <stdlib.h>
+#include <stdio.h>
 #include "libft.h"
 #include "libssl.h"
 
-#define ROT_R(x,n) (((x) >> (n)) | ((x) << (32 - (n))))
+#define CH(x,y,z)    (((x) & (y)) ^ ((~(x)) & (z)))
+#define MAJ(x,y,z)   (((x) & (y)) ^ ((x) & (z)) ^ ((y) & (z)))
+# define SIGMA_L0(x) (ROTATE((x),30) ^ ROTATE((x),19) ^ ROTATE((x),10))
+# define SIGMA_L1(x) (ROTATE((x),26) ^ ROTATE((x),21) ^ ROTATE((x),7))
+# define SIGMA_S0(x) (ROTATE((x),25) ^ ROTATE((x),14) ^ ((x)>>3))
+# define SIGMA_S1(x) (ROTATE((x),15) ^ ROTATE((x),13) ^ ((x)>>10))
 
 #define A  block[0]
 #define B  block[1]
@@ -42,7 +49,7 @@ static const uint32_t k[] = {
 #ifdef DEBUG
 static void		debug_print_buff(uint8_t *buff, size_t len)
 {
-	size_t i;
+	size_t	i;
 
 	debug("len = %zu\n", len);
 	i = -1;
@@ -52,46 +59,78 @@ static void		debug_print_buff(uint8_t *buff, size_t len)
 }
 #endif
 
-static void		compress(uint32_t i, uint32_t *block, uint32_t *w)
+static void		reverse_bits_32_arr(uint32_t *arr, size_t size)
 {
-	uint32_t s0;
-	uint32_t s1;
+	size_t i;
 
-	s1 = ROT_R(E, 6) ^ ROT_R(E, 11) ^ ROT_R(E, 25);
-	T1 = H + s1 + (E & F) ^ ((~E) & G) + k[i] + w[i];
-	s0 = ROT_R(A, 2) ^ ROT_R(A, 13) ^ ROT_R(A, 22);
-	T2 = s0 + (A & B) ^ (A & C) ^ (B & C);
-}
-
-static void		extend_chunk(void *msg, uint32_t *w)
-{
-	size_t	i;
-	uint32_t s0;
-	uint32_t s1;
-
-	ft_memcpy(w, msg, sizeof(uint32_t) * 16);
-	i = 15;
-	while (i < 64)
+	i = 0;
+	while (i < size)
 	{
-		s0 = ROT_R(w[i - 15], 7) ^ ROT_R(w[i - 15], 18) ^ (w[i - 15] >> 3);
-		s1 = ROT_R(w[i - 2], 17) ^ ROT_R(w[i - 2], 19) ^ (w[i - 2] >> 10);
-		w[i] = w[i - 16] + s0 + w[i - 7] + s1;
+		arr[i] = ((arr[i] & 0xff) << 24 | \
+				(arr[i] & 0xff00) << 8 | \
+				(arr[i] & 0xff0000) >> 8 | \
+				(arr[i] & 0xff000000) >> 24);
 		++i;
 	}
 }
 
-static void		process_chunk(char *msg, uint32_t *hash)
+static void		prepare_message_buffer(const void *message, size_t len, \
+						uint32_t **buff, size_t *bufflen)
+{
+#ifdef DEBUG
+	debug_print_buff((uint8_t *)message, len);
+#endif
+	size_t i = 0;
+
+	while ((len * 8 + 1 + i) % 512 != 448)
+		i++;
+	*bufflen = (len * 8 + 1 + i + 64) / 8;
+	*buff = malloc(*bufflen);
+	if (*buff == NULL)
+	{
+		perror("ft_ssl");
+		exit(EXIT_FAILURE);
+	}
+	ft_memset(*buff, 0, *bufflen);
+	ft_memcpy(*buff, message, len);
+	*((uint8_t *)(*buff) + len) = 0x80;
+	reverse_bits_32_arr(*buff, *bufflen / 4);
+	*(*buff + *bufflen / 4 - 1) = (uint32_t)(len * 8);
+#ifdef DEBUG
+	debug_print_buff((uint8_t *)*buff, *bufflen);
+#endif
+}
+
+static void		prepare_message_schedule(uint32_t *message, uint32_t *w)
+{
+	size_t	i;
+
+	i = 0;
+	while (i < 16)
+	{
+		w[i] = message[i];
+		++i;
+	}
+	while (i < 64)
+	{
+		w[i] = w[i - 16] + SIGMA_S0(w[i - 15]) + w[i - 7] + SIGMA_S1(w[i - 2]);
+		++i;
+	}
+}
+
+static void		compress(uint32_t *message, uint32_t *hash)
 {
 	uint32_t	block[10];
 	uint32_t	w[64];
 	uint32_t	i;
 
 	ft_memcpy(block, hash, sizeof(uint32_t) * 8);
-	extend_chunk(msg, (uint32_t *)&w);
-	i = 0;
-	while(i < 64)
+	prepare_message_schedule(message, &w[0]);
+	i = -1;
+	while(++i < 64)
 	{
-		compress(i, block, (uint32_t *)&w);
+		T1 = H + SIGMA_L1(E) + CH(E, F, G) + k[i] + w[i];
+		T2 = SIGMA_L0(A) + MAJ(A, B, C);
 		H = G;
 		G = F;
 		F = E;
@@ -102,53 +141,28 @@ static void		process_chunk(char *msg, uint32_t *hash)
 		A = T1 + T2;
 		debug("%#010x %#010x %#010x %#010x %#010x %#010x %#010x %#010x\n", \
 				A, B, C, D, E, F, G, H);
-		++i;
 	}
 	i = -1;
 	while (++i < 8)
 		hash[i] += block[i];
 }
 
-static void		init_msg_buff(const void *msg, size_t len, void **buff, size_t *bufflen)
-{
-#ifdef DEBUG
-	debug_print_buff((uint8_t *)msg, len);
-#endif
-	*bufflen = len + 1;
-	while (*bufflen % 64 != 56)
-		++(*bufflen);
-	*buff = malloc(*bufflen + sizeof(uint64_t));
-	if (*buff == NULL)
-	{
-		perror("ft_ssl");
-		exit(EXIT_FAILURE);
-	}
-	ft_memset(*buff, 0, *bufflen + sizeof(uint64_t));
-	ft_memcpy(*buff, msg, len);
-	*(uint32_t *)(*buff + len) = 0x01;
-	*(uint32_t *)(*buff + *bufflen) = (uint32_t)(len * 8);
-#ifdef DEBUG
-	debug_print_buff((uint8_t *)*buff, *bufflen + sizeof(uint64_t));
-#endif
-}
-
 void			*sha256(const void *msg, size_t len)
 {
 	static uint32_t	hash[8];
-	void			*buff;
+	uint32_t		*buff;
 	size_t			bufflen;
 	size_t			i;
 
 	ft_memcpy(hash, h, sizeof(uint32_t) * 8);
-	init_msg_buff(msg, len, &buff, &bufflen);
-	debug("    A          B          C          D          E          F\
-          G          H\n");
+	prepare_message_buffer(msg, len, &buff, &bufflen);
 	i = 0;
-	while (i < bufflen)
+	while (i < bufflen / 4)
 	{
-		process_chunk(buff + i, hash);
-		i += 64;
+		compress(buff + i, hash);
+		i += 16;
 	}
 	free(buff);
+	reverse_bits_32_arr(hash, 8);
 	return (&hash);
 }
