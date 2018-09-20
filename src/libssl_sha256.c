@@ -88,7 +88,7 @@ static void		prepare_message_buffer(const void *message, size_t len, \
 	*buff = malloc(*bufflen);
 	if (*buff == NULL)
 	{
-		perror("ft_ssl");
+		perror("ft_ssl: sha256");
 		exit(EXIT_FAILURE);
 	}
 	ft_memset(*buff, 0, *bufflen);

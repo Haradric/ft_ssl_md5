@@ -6,7 +6,7 @@ SOURCE = src/main.c        \
          src/md5.c         \
          src/sha256.c      \
          src/read_params.c \
-         src/read_file.c   \
+         src/read_stdin.c  \
          src/error.c       \
          src/util.c
 OBJECT = $(SOURCE:.c=.o)

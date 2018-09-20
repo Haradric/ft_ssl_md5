@@ -88,7 +88,7 @@ test_md5_11()
 {
     echo "And above all," > file
     result="$(echo "one more thing" | $EXECUTABLE md5 -r -p -s "foo" file -s "bar" 2>&1)"
-    reference=$'one more thing\na0bd1876c6f011dd50fae52827f445f5\nacbd18db4cc2f85cedef654fccc4a4d8 "foo"\n53d53ea94217b259c11a5a2d104ec58a file\nft_ssl: No such file or directory: -s\nft_ssl: No such file or directory: bar'
+    reference=$'one more thing\na0bd1876c6f011dd50fae52827f445f5\nacbd18db4cc2f85cedef654fccc4a4d8 "foo"\n53d53ea94217b259c11a5a2d104ec58a file\nft_ssl: md5: No such file or directory: -s\nft_ssl: md5: No such file or directory: bar'
     rm -f file
     result_compare "$result" "$reference"
 }

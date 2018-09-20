@@ -117,7 +117,7 @@ static void		prepare_message_schedule(const void *msg, size_t len, \
 	*buff = malloc(*bufflen + sizeof(uint64_t));
 	if (*buff == NULL)
 	{
-		perror("ft_ssl");
+		perror("ft_ssl: sha256");
 		exit(EXIT_FAILURE);
 	}
 	ft_memset(*buff, 0, *bufflen + sizeof(uint64_t));
@@ -138,7 +138,6 @@ void			*md5(const void *msg, size_t len)
 
 	ft_memcpy(hash, h, sizeof(uint32_t) * 4);
 	prepare_message_schedule(msg, len, &buff, &bufflen);
-	debug("    A          B          C          D          F\n");
 	i = 0;
 	while (i < bufflen)
 	{

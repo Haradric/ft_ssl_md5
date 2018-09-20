@@ -26,10 +26,12 @@ int				read_params(t_sslparam *opt, int argc, char **argv);
 char			*read_stdin(void);
 char			*read_file(char *path, int fd, size_t len);
 
-void			error(const char *str);
-void			terminate(const char *str);
-void			error_custom(const char *str, const char *err_str);
-void			terminate_custom(const char *str, const char *err_str);
+void			error(const char *prefix, const char *str);
+void			terminate(const char *prefix, const char *str);
+void			error_custom(const char *prefix, const char *str, \
+						const char *err_str);
+void			terminate_custom(const char *prefix, const char *str, \
+						const char *err_str);
 
 void			hash_to_str(char *buff, uint8_t *hash, size_t len);
 

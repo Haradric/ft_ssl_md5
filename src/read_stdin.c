@@ -16,10 +16,7 @@ static int	add_to_str(char **str, char *buff)
 	tmp = *str;
 	*str = ft_strjoin(tmp, buff);
 	if (*str == NULL)
-	{
-		perror("ft_ssl");
-		exit(EXIT_FAILURE);
-	}
+		terminate("ft_ssl", NULL);
 	ft_memset(buff, 0, BUFFSIZE);
 	free(tmp);
 	return (0);
@@ -31,8 +28,9 @@ char		*read_stdin(void)
 	char	*ret;
 	size_t	i;
 
-	if ((ret = ft_strdup("")) == NULL)
-		terminate("exit");
+	ret = ft_strdup("");
+	if (ret == NULL)
+		terminate("ft_ssl", NULL);
 	ft_memset(buff, 0, BUFFSIZE + 1);
 	while ((i = read(STDIN_FILENO, buff, BUFFSIZE)) > 0)
 	{

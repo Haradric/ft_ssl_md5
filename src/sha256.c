@@ -64,12 +64,12 @@ static int	hash_file(char *file, t_sslparam *opt)
 
 	if ((fd = open(file, O_RDONLY)) == -1 || fstat(fd, &st) == -1)
 	{
-		error(file);
+		error("ft_ssl: sha256", file);
 		return (1);
 	}
 	if (S_ISDIR(st.st_mode))
 	{
-		error_custom(file, "not a directory");
+		error_custom("ft_ssl: sha256", file, "Is a directory");
 		close(fd);
 		return (1);
 	}
@@ -78,7 +78,7 @@ static int	hash_file(char *file, t_sslparam *opt)
 	hash_file_print(buff, file, opt);
 	if (munmap(map, st.st_size) == -1 || close(fd) == -1)
 	{
-		error(file);
+		error("ft_ssl: sha256", file);
 		return (1);
 	}
 	return (0);

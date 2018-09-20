@@ -10,7 +10,7 @@
 static int	from_stdin(const t_sslfunc *func_arr)
 {
 	(void)func_arr;
-	terminate_custom("exit", "read from stdin is not implemented yet");
+	terminate_custom("ft_ssl", NULL, "read from stdin is not implemented yet");
 	return (1);
 }
 
@@ -25,7 +25,7 @@ static int	from_argv(const t_sslfunc *func_arr, int argc, char **argv)
 			return (func_arr[i].func(argc - 1, &argv[1]));
 		++i;
 	}
-	terminate_custom(argv[1], "invalid command");
+	terminate_custom("ft_ssl", argv[1], "invalid command");
 	return (1);
 }
 

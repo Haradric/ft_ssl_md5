@@ -88,7 +88,7 @@ test_sha256_11()
 {
     echo "And above all," > file
     result="$(echo "one more thing" | $EXECUTABLE sha256 -r -p -s "foo" file -s "bar" 2>&1)"
-    reference=$'one more thing\n720bbf63077e0bea3b70c87954123daa6fcf32f973f4d646622bd016b140ec75\n2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae "foo"\nf9eb9a5a063eb386a18525c074e1065c316ec434f911e0d7d59ba2d9fd134705 file\nft_ssl: No such file or directory: -s\nft_ssl: No such file or directory: bar'
+    reference=$'one more thing\n720bbf63077e0bea3b70c87954123daa6fcf32f973f4d646622bd016b140ec75\n2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae "foo"\nf9eb9a5a063eb386a18525c074e1065c316ec434f911e0d7d59ba2d9fd134705 file\nft_ssl: sha256: No such file or directory: -s\nft_ssl: sha256: No such file or directory: bar'
     rm -f file
     result_compare "$result" "$reference"
 }
